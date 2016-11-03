@@ -1,0 +1,651 @@
+google.load("visualization", "1", {packages:["table"]});
+			$(function() {
+
+				$("#chart-wrapper").height( $(window).height() - 50 );
+				$("#chart-wrapper").width( $("#chart-wrapper").height() );
+
+				$(window).resize(function() {
+					$("#chart-wrapper").height( $(window).height() - 50 );
+					$("#chart-wrapper").width( $("#chart-wrapper").height() );
+					$("#mapChart").highcharts().redraw();
+					$("#mapChart").highcharts().reflow();
+				})
+
+				var selectedPoint;
+
+				var Whisky = function(name, rating, cloud, price, region){
+					this.Name = name;
+					this.Rating = rating;
+					this.WordCloud = cloud;
+					this.Price = price;
+					this.Region = region;
+				};
+
+				var whiskysList = [
+					["Macallan Sherry Cask Strength", "macallancaskstrength", "http://i.imgur.com/8buv3qa.png", "Speyside", 59, 76],
+					["Aberlour A'bunadh", "aberlourabunadh", "http://i.imgur.com/W1sgU.png?1", "Speyside", 74, 70],
+					["Macallan 18 Sherry", "macallan18sherry", "http://i.imgur.com/NfrDM4S.png", "Speyside", 68, 60],
+					["Macallan 12 Sherry", "macallan12sherry", "http://i.imgur.com/qnKAhT6.png?1", "Speyside", 57, 56],
+					["Aberlour 12 Non Chill Filtered", "aberlour12ncf", "http://i.imgur.com/RTKwnvA.png", "Speyside", 47, 66],
+					["Glenfarclas 17", "glenfarclas17", "http://i.imgur.com/tLhtq8Z.png", "Highland", 23, 64],
+					["Glendronach 12", "glendronach12", "http://i.imgur.com/M6GwSuN.png", "Highland", 38, 54],
+					["Glenfarclas 12", "glenfarclas12", "http://i.imgur.com/fTd6367.png", "Highland", 24, 46],
+					["Glenmorangie Quinta Ruban", "glenmorangiequinta", "http://i.imgur.com/X2Wo7Zi.png", "Highland", 10, 34],
+					["Auchentoshan Three Wood", "auchentoshan3wood", "http://i.imgur.com/zYSBlpF.png", "Lowland", 14, 24],
+					["Glenlivet 18", "glenlivet18", "http://i.imgur.com/STJJ2HH.png", "Speyside", 17, 12],
+					["Glengoyne 10", "glengoyne10", "http://i.imgur.com/G5WUiPY.png", "Highland", 31, 17],
+					["Balvenie 14 Caribbean Cask", "balveniecaribbean", "http://i.imgur.com/n7gaL3V.png", "Speyside", 29, 30],
+					["Glenmorangie Lasanta", "glenmorangielasanta", "http://i.imgur.com/E3pziD3.png", "Highland", 49, 37],
+					["Aberlour 12 Double Cask Matured", "aberlour12dc", "http://i.imgur.com/hCnhVaw.png", "Speyside", 58, 43],
+					["Glenfiddich 15", "glenfiddich15", "http://i.imgur.com/BYQYIKb.png", "Speyside", 73, 37],
+					["Tomatin 12", "tomatin12", "http://i.imgur.com/8W71GUq.png", "Highland", 66, 30],
+					["Pig's Nose", "pigsnose", "http://i.imgur.com/LBlytiu.png", "Other", 74, 27],
+					["Glenlivet 16 Nadurra", "glenlivetnadurra", "http://i.imgur.com/dC7da3e.png", "Speyside", 52, 20],
+					["Highland Park 15", "highlandpark15", "http://i.imgur.com/gGBX9BZ.png", "Island", 9, 6],
+					["Oban 18", "oban18", "http://i.imgur.com/rcrrhpy.png", "Highland", 29, 8],
+					["Glenlivet 15 French Oak Reserve", "glenlivet15", "http://i.imgur.com/FuAOies.png", "Speyside", 52, 7],
+					["Glenfiddich 12", "glenfiddich12", "http://i.imgur.com/gMnClQy.jpg", "Speyside", 59, -1],
+					["Springbank 10", "springbank10", "http://i.imgur.com/fUH3tIz.jpg", "Campbeltown", 4, -3],
+					["Oban 14", "oban14", "http://i.imgur.com/1lJRxYJ.png", "Highland", 29, -6],
+					["Old Pulteney 12", "oldpulteney12", "http://i.imgur.com/jgisRPG.png?1", "Highland", 49, -10],
+					["Glenlivet 12", "glenlivet12", "http://i.imgur.com/ZYL6l8h.png?1", "Speyside", 62, -18],
+					["Glenmorangie Nectar D'Or", "glenmorangienectar", "http://i.imgur.com/scWXCyB.png", "Highland", 35, -18],
+					["Deanston 12", "deanston12", "http://i.imgur.com/w6dYRdD.png?1", "Highland", 23, -22],
+					["Scapa 16", "scapa16", "http://i.imgur.com/1BCRecf.png", "Island", 54, -27],
+					["Macallan 17 Fine Oak", "macallan17fo", "http://i.imgur.com/EMxOOuL.png", "Speyside", 21, -35],
+					["Macallan 10 Fine Oak", "macallan10fo", "http://i.imgur.com/1FIg3Sa.png", "Speyside", 30, -48],
+					["Balvenie 12 Doublewood", "balvenie12dw", "http://i.imgur.com/XQ0cCEe.png", "Speyside", 59, -43],
+					["Glenmorangie Original 10", "glenmorangie10o", "http://i.imgur.com/hODgTl0.png", "Highland", 62, -58],
+					["Auchentoshan Classic", "auchentoshanclassic", "http://i.imgur.com/xmAjLUP.png", "Lowland", 66, -65],
+					["Glenkinchie 12", "glenkinchie12", "http://i.imgur.com/yq8VrCe.png", "Lowland", 59, -75],
+					["Dalwhinnie 15", "dalwhinnie15", "http://i.imgur.com/C1EySTj.png?1", "Speyside", 47, -70],
+					["Tobermory 10", "tobermory10", "http://i.imgur.com/RKnpX0a.jpg", "Island", 14, -74],
+					["Bruichladdich Rocks", "bruichladdichrocks", "http://i.imgur.com/2Xm30Io.png", "Islay", -6, -58],
+					["Ledaig 10", "ledaig10", "http://i.imgur.com/3B8CqOV.png", "Island", -23, -72],
+					["Bruichladdich The Laddie Ten", "bruichladdichladdie", "http://i.imgur.com/QQuIC5w.png", "Islay", -2, -44],
+					["Glenfiddich 18", "glenfiddich18", "http://i.imgur.com/2N9enRW.png", "Speyside", 1, -20],
+					["Cragganmore 12", "cragganmore12", "http://i.imgur.com/NRAm7tJ.png?1", "Speyside", 5, -13],
+					["Highland Park 12", "highlandpark12", "http://i.imgur.com/Sz3a1nq.png?1", "Island", -8, 0],
+					["Johnnie Walker Black Label", "johnniewalkerblack", "http://i.imgur.com/Igs7mQN.png", "Other", -20, -39],
+					["Bowmore 12", "bowmore12", "http://i.imgur.com/0yTUlka.png", "Islay", -38, -52],
+					["Bruichladdich Port Charlotte", "bruichladdichpc", "http://i.imgur.com/qLqoIrQ.png", "Islay", -58, -62],
+					["Bruichladdich Octomore", "bruichladdichoct", "http://i.imgur.com/HadfcBu.png", "Islay", -81, -74],
+					["Kilchoman Peated", "kilchomanpeated", "http://i.imgur.com/NRmufzm.png", "Islay", -71, -50],
+					["Ardbeg 10", "ardbeg10", "http://i.imgur.com/rMP5opn.png", "Islay", -62, -43],
+					["Black Bottle", "blackbottle", "http://i.imgur.com/geyKEvv.png", "Other", -40, -37],
+					["Caol Ila 12", "caolila12", "http://i.imgur.com/wrdg7hW.png", "Islay", -56, -31],
+					["Laphroaig 10 Cask Strength", "laphroaig10cs", "http://i.imgur.com/cJqVlgA.png", "Islay", -82, -37],
+					["Laphroaig 10", "laphroaig10", "http://i.imgur.com/nR0P5dA.png", "Islay", -69, -29],
+					["Smokehead", "smokehead", "http://i.imgur.com/f2ugqKc.png", "Islay", -38, -21],
+					["Ardmore Traditional Cask Peated", "ardmoretradpeated", "http://i.imgur.com/2Ds7rTC.png", "Speyside", -32, -13],
+					["Laphroaig 18", "laphroaig18", "http://i.imgur.com/1qNqH5L.png", "Islay", -60, -17],
+					["Laphroaig Quarter Cask", "laphroaigqc", "http://i.imgur.com/7O4wdij.png", "Islay", -76, -8],
+					["Talisker 10", "talisker10", "http://i.imgur.com/3UWhc99.png", "Island", -51, -6],
+					["Balvenie 17 Peated Cask", "balveniepeated", "http://i.imgur.com/9MuFHX2.png", "Speyside", -38, 0],
+					["Benromach Peat Smoke", "benromachpeatsmoke", "http://i.imgur.com/Rp7ott3.png", "Speyside", -38, 7],
+					["Ardbeg Corryvreckan", "ardbegcorryvreckan", "http://i.imgur.com/NpMjA3u.png", "Islay", -64, 7],
+					["Lagavulin 12", "lagavulin12", "http://i.imgur.com/ON77byY.png", "Islay", -83, 24],
+					["Talisker Distiller's Edition", "taliskerDE", "http://i.imgur.com/aZjBqrj.png", "Island", -52, 18],
+					["Highland Park 18", "highlandpark18", "http://i.imgur.com/fhMbjkC.png", "Island", -15, 14],
+					["Bunnahabhain 12", "bunnahabhain12", "http://i.imgur.com/N8VaZKJ.png?1", "Islay", -43, 25],
+					["Highland Park 25", "highlandpark25", "http://i.imgur.com/8SEmttO.png", "Island", -11, 28],
+					["Lagavulin 16", "lagavulin16", "http://i.imgur.com/bPpXGLU.png", "Islay", -47, 33],
+					["Lagavulin Distiller's Edition", "lagavulinDE", "http://i.imgur.com/n44l4fp.png", "Islay", -63, 35],
+					["Bunnahabhain 18", "bunnahabhain18", "http://i.imgur.com/vcHX5tz.png", "Islay", -50, 44],
+					["Laphroaig Triplewood", "laphroaigtriplewood", "http://i.imgur.com/ELlhae7.png", "Islay", -58, 52],
+					["Ardbeg Uigeadail", "ardbeguigeadail", "http://i.imgur.com/AuquffD.png?1", "Islay", -79, 67],
+					["Bowmore 15 Darkest", "bowmoredarkest", "http://i.imgur.com/P5WN3vq.png", "Islay", -43, 63],
+					["Balvenie 15 Single Barrel", "balvenie15sc", "http://i.imgur.com/Z50atlq.png", "Speyside", -12, 60],
+					["Balvenie 21 Portwood", "balvenie21pw", "http://i.imgur.com/4aDhH96.png", "Speyside", 3, 48],
+					["Dalmore 12", "dalmore12", "http://i.imgur.com/aZbrApI.png", "Highland", 0, 73],
+					["Jura Superstition", "jurasuperstition", "http://i.imgur.com/n88jJZj.png", "Island", -14, 79],
+					["Chivas Regal 12", "chivasregal", "http://i.imgur.com/zV96To0.png", "Other", 0, -29]
+				];
+
+				var scotchDB = '../scotchfile.csv';
+				Papa.parse(scotchDB, {
+					download: true,
+					worker: true,
+					header: true,
+					complete: function(results) {
+						processResults(results);
+					}
+				});
+
+				function processResults(results) {
+					$.each(whiskysList, function(name,variable) {
+						var regex = new RegExp(variable[0], "i");
+						var tempVar = results.data.map(function(i) {
+							if (i["Whisky Name"].match(regex)) {
+								return i;
+							}
+						});
+						tempVar = $.grep(tempVar, function(n){return(n)});
+						window[variable[1]] = new Whisky(variable[0], averageRating(tempVar), variable[2], getPrice(tempVar), variable[3]);
+						$("#movable").append("<p class='scotch " + variable[1] + "'>" + window[variable[1]].Name + "</p>");
+					});
+					$("#movable p").each(function(index,value) {
+						if ( parseFloat($("." + $(this).attr('class').split(' ')[1]).css('left')) <= '450' ) {
+							$(this).addClass('w');
+						}
+					});
+					mapChartInit();
+					//priceChartInit();
+				}
+
+				function averageRating(data) {
+					var total = 0;
+					var count = 0;
+					$.each(data, function(index, value) {
+						if (!isNaN(value["Rating"]) && value["Rating"] != "") {
+							total += parseFloat(value["Rating"]);
+							count++;
+						}
+					})
+					if (total != 0)
+						return Math.round(total / count);
+					else
+						return 0;
+				}
+
+				function getPrice(data) {
+					var total = 0;
+					var count = 0;
+					$.each(data, function(index, value) {
+						if (value["Price"].indexOf('$') != -1 && !value["Price"].match(/\./) && !value["Price"].match(/[a-z]/i) && !value["Price"].match(/\(/) && value["Price"].indexOf("£") == -1 && value["Price"].indexOf("~") == -1) {
+							total += parseFloat(value["Price"].replace(/\./g, '').replace(/,/g,'.').replace(/[^\d\.]/g,''));
+							count++;
+						}
+					});
+					if (total != 0)
+						return Math.round(total / count);
+					else
+						return 0;
+				}
+
+				//Map chart initialization--------------------------------------
+
+				function mapChartInit(selected) {
+					var highlandList = new Array();
+					var speysideList = new Array();
+					var islandList = new Array();
+					var islayList = new Array();
+					var otherList = new Array();
+					var lowlandList = new Array();
+					var campbeltownList = new Array();
+
+					$(whiskysList).each(function(key,value) {
+						if (window[value[1]].Rating >= $('#lowerrange').val() && window[value[1]].Rating <= $('#upperrange').val()) {
+							switch(value[3]) {
+								case 'Highland':
+									highlandList.push({'x':value[4], 'y':value[5], 'name':value[0]});
+									break;
+								case 'Speyside':
+									speysideList.push({'x':value[4], 'y':value[5], 'name':value[0]});
+									break;
+								case 'Island':
+									islandList.push({'x':value[4], 'y':value[5], 'name':value[0]});
+									break;
+								case 'Islay':
+									islayList.push({'x':value[4], 'y':value[5], 'name':value[0]});
+									break;
+								case 'Other':
+									otherList.push({'x':value[4], 'y':value[5], 'name':value[0]});
+									break;
+								case 'Lowland':
+									lowlandList.push({'x':value[4], 'y':value[5], 'name':value[0]});
+									break;
+								case 'Campbeltown':
+									campbeltownList.push({'x':value[4], 'y':value[5], 'name':value[0]});
+									break;
+							}
+						}
+					});
+
+					var series = new Array();
+
+
+					$("#mapChart").highcharts({
+						chart: {
+							plotBackgroundImage: 'back4.png',
+							type: 'scatter',
+							className: 'map'
+						},
+						title: {text:''},
+						legend: {enabled: false},
+						xAxis: {
+							title: {text:''},
+							min: -100,
+							max: 100,
+							gridLineWidth: 0,
+							minorGridLineWidth: 0,
+							lineColor: 'transparent',
+							labels: {enabled: false},
+							minorTickLength: 0,
+							tickLength: 0
+						},
+						yAxis: {
+							title: {text:''},
+							min: -100,
+							max: 100,
+							gridLineWidth: 0,
+							minorGridLineWidth: 0,
+							lineColor: 'transparent',
+							labels: {enabled: false},
+							minorTickLength: 0,
+							tickLength: 0
+						},
+						tooltip: {enabled: false},
+						plotOptions: {
+							scatter: {
+								dataLabels: {
+									enabled: true,
+									allowOverlap: true,
+									color: 'white',
+									style: {
+										'fontWeight': 'normal',
+										'fontSize': '10px',
+										'textShadow': '0px 0px 6px black, 0px 0px 3px black'
+									},
+									formatter: function() {
+										//return $("#chart-wrapper").height() >= 800 ? this.point.name : "";
+										return this.point.name;
+									}
+								}
+							},
+							series: {
+								cursor: 'pointer',
+								stickyTracking: false,
+								allowPointSelect: true,
+								marker: {
+									symbol: 'circle',
+									fillColor: 'black',
+									lineColor: 'white',
+									lineWidth: 1
+								},
+								point: {
+									events: {
+										click: function(event) {
+											if (!event.point.selected) {
+												selectedPoint = [event.point.series.index, event.point.index, event.point.name];
+												$('#moreinfo').css('visibility', 'visible');
+												$('#info').empty();
+												$(whiskysList).each(function(key,value) {
+													if (window[value[1]].Name === event.point.name) {
+														$("#info").html("<h4 class='infoTitle'>" + window[value[1]].Name + "</h4>" + "<p>Average Rating: <span class='rating badge'>" + window[value[1]].Rating + "</span></p><div class='links'><a class='getReviews'>Scotchit Reviews</a><span> | </span><a class='showOnMap'>Show on Price vs Rating chart</a></div><a href='" + window[value[1]].WordCloud + "' target='_blank'><img src='" + window[value[1]].WordCloud + "' class='wordcloud img-responsive'></a>");
+													}
+												});
+											}
+										}
+									}
+								}
+							}
+						},
+						series: [{
+							name: "Highland",
+							data: highlandList
+						}, {
+							name: "Speyside",
+							data: speysideList
+						}, {
+							name: "Island",
+							data: islandList
+						}, {
+							name: "Islay",
+							data: islayList
+						}, {
+							name: "Other",
+							data: otherList
+						}, {
+							name: "Lowland",
+							data: lowlandList
+						}, {
+							name: "Campbeltown",
+							data: campbeltownList
+						}]
+					});
+
+					var chart = $("#mapChart").highcharts();
+					if (selected != undefined) {
+						for(var j=0; j<chart.series[selected[0]].data.length; j++) {
+							if (chart.series[selected[0]].data[j].name == selected[2])
+								chart.series[selected[0]].data[j].select();
+						}
+					}
+
+					var series = $("#mapChart").highcharts().series;
+					$(series).each(function(key,value) {
+						if (!$("input[value='" + value.name + "']").is(":checked")) {
+							value.hide();
+						}
+					});
+				}
+
+				//Price chart initialization------------------------------------
+
+				function priceChartInit(selected) {
+					var highlandList = new Array();
+					var speysideList = new Array();
+					var islandList = new Array();
+					var islayList = new Array();
+					var otherList = new Array();
+					var lowlandList = new Array();
+					var campbeltownList = new Array();
+					var excluded = new Array();
+					$(whiskysList).each(function(key,value) {
+						if (window[value[1]].Rating == 0 || window[value[1]].Price == 0)
+							excluded.push(window[value[1]].Name);
+						else {
+							switch(window[value[1]].Region) {
+								case 'Highland':
+									highlandList.push({'x':window[value[1]].Price, 'y':window[value[1]].Rating, 'name':window[value[1]].Name});
+									break;
+								case 'Speyside':
+									speysideList.push({'x':window[value[1]].Price, 'y':window[value[1]].Rating, 'name':window[value[1]].Name});
+									break;
+								case 'Island':
+									islandList.push({'x':window[value[1]].Price, 'y':window[value[1]].Rating, 'name':window[value[1]].Name});
+									break;
+								case 'Islay':
+									islayList.push({'x':window[value[1]].Price, 'y':window[value[1]].Rating, 'name':window[value[1]].Name});
+									break;
+								case 'Other':
+									otherList.push({'x':window[value[1]].Price, 'y':window[value[1]].Rating, 'name':window[value[1]].Name});
+									break;
+								case 'Lowland':
+									lowlandList.push({'x':window[value[1]].Price, 'y':window[value[1]].Rating, 'name':window[value[1]].Name});
+									break;
+								case 'Campbeltown':
+									campbeltownList.push({'x':window[value[1]].Price, 'y':window[value[1]].Rating, 'name':window[value[1]].Name});
+									break;
+							}
+						}
+							
+					});
+
+					$("#mapChart").highcharts({
+						chart: {
+							type: 'scatter',
+							className: 'price'
+						},
+						title: {
+							text: ''
+						},
+						xAxis: {
+							title: {
+								text: 'Price (USD)'
+							},
+							min: 0
+						},
+						yAxis: {
+							title: {
+								text: 'Rating'
+							}
+						},
+						tooltip: {
+							formatter: function() {
+								var index = this.series.index;
+								return "<b>" + this.key + "</b><br>Price: $" + this.x + "<br>Rating: " + this.y + "<br>";
+							}
+						},
+						plotOptions: {
+							series: {
+								stickyTracking: false,
+								allowPointSelect: true,
+								marker: {
+									states: {
+										select: {
+											enabled: true,
+											radius: 6,
+											fillColor: 'black'
+										}
+									},
+									symbol: 'circle'
+								},
+								point: {
+									events: {
+										click: function(event) {
+											if (!event.point.selected) {
+												selectedPoint = [event.point.series.index, event.point.index, event.point.name];
+												$('#moreinfo').css('display', 'block');
+												$('#info').empty();
+												$(whiskysList).each(function(key,value) {
+													if (window[value[1]].Name === event.point.name) {
+														$("#info").html("<h4 class='infoTitle'>" + window[value[1]].Name + "</h4>" + "<p>Average Rating: <span class='rating badge'>" + window[value[1]].Rating + "</span><div class='links'><a class='getReviews'>Scotchit Reviews</a><span> | </span><a class='showOnMap'>Show on Malt Map</a></div><a href='" + window[value[1]].WordCloud + "' target='_blank'><img src='" + window[value[1]].WordCloud + "' class='wordcloud img-responsive'></a>");
+													}
+												});
+											} else {
+												$("#moreinfo").hide();
+											}
+										}
+									}
+								}
+							}
+						},
+						series: [{
+							name: "Highland",
+							data: highlandList
+						}, {
+							name: "Speyside",
+							data: speysideList
+						}, {
+							name: "Island",
+							data: islandList
+						}, {
+							name: "Islay",
+							data: islayList
+						}, {
+							name: "Other",
+							data: otherList
+						}, {
+							name: "Lowland",
+							data: lowlandList
+						}, {
+							name: "Campbeltown",
+							data: campbeltownList
+						}]
+					});
+
+					var chart = $("#mapChart").highcharts();
+					if (selected != undefined) {
+						for(var j=0; j<chart.series[selected[0]].data.length; j++) {
+							if (chart.series[selected[0]].data[j].name == selected[2])
+								chart.series[selected[0]].data[j].select();
+						}
+					}
+
+					var series = $("#mapChart").highcharts().series;
+					$(series).each(function(key,value) {
+						if (!$("input[value='" + value.name + "']").is(":checked")) {
+							value.hide();
+						}
+					});
+
+					console.log("The following are excluded on the Price chart, because the money and/or rating value are 0:");
+					$(excluded).each(function(key,value) {
+						console.log(value);
+					});
+				}
+
+				function updateChart(region) {
+					var chart = $("#mapChart").highcharts();
+					var series = chart.series;
+					$(series).each(function(key,value) {
+						if (value.name == region) {
+							if (value.visible) {
+								value.hide();
+								$('#' + value.name).css('fill', 'white');
+								$("input[value='" + value.name + "']").prop("checked", false);
+							} else {
+								value.show();
+								$('#' + value.name).css('fill', 'steelblue');
+								$("input[value='" + value.name + "']").prop("checked", true);
+							}
+						}
+					});
+				}
+
+				//Make table of whisky reviews
+				function makeTable(list) {
+					var data = new Array();
+					for (var i = 0; i < list.length; i++) {
+						data.push([
+							list[i]['Whisky Name'] != '' ? list[i]['Whisky Name'] : '', 
+							list[i]['Reviewer Username'] != '' ? list[i]['Reviewer Username'] : '', 
+							list[i]['Link To reddit Review'] != '' ? "<a target='_blank' href='" + list[i]['Link To reddit Review'] + "'>" + list[i]['Link To reddit Review'] + "</a>" : '',
+							list[i]['Rating'] != '' ? list[i]['Rating'] : '', 
+							list[i]['Region'] != '' ? list[i]['Region'] : '', 
+							list[i]['Price'] != '' ? list[i]['Price'] : '', 
+							list[i]['Date'] != '' ? list[i]['Date'] : ''
+						]);
+					};
+					$("#whiskyReviews").dataTable({
+						'destroy': true,
+						'data': data,
+						'bDeferRender': true,
+						'columns': [
+							{'title': 'Whisky Name'},
+							{'title': 'Reviewer Username'},
+							{'title': 'Link To reddit Review'},
+							{'title': 'Rating'},
+							{'title': 'Region'},
+							{'title': 'Price'},
+							{'title': 'Date'}
+						]
+					});
+					$("#reviewList, #backgroundFade").show();
+				}
+
+				//UI interactions-----------------------------------------
+
+				$('#ratinglimit').on('click', function(e) {
+					e.preventDefault();
+					mapChartInit();
+					$(".regionToggle").each(function() {
+						if (!this.checked) {
+							$(series).each(function(key,value) {
+								if (value.name == region) {
+									if (value.visible) {
+										value.hide();
+									} else if (value.visible) {
+										value.show();
+									}
+								}
+							});
+						}
+					});
+				});
+				$('#reset').on('click', function(e) {
+					if ($("#lowerrange").val() != 1 || $("#upperrange").val() != 100) {
+						$("#lowerrange").val("1");
+						$("#upperrange").val("100");
+						mapChartInit();
+					}
+				});
+
+				$('#close').on('click', function() {
+					$('#moreinfo').css('display', 'none');
+					$(".scotch").css('text-decoration', 'none').css('font-size', '10px');
+					if (selectedPoint != undefined)
+						$("#mapChart").highcharts().series[selectedPoint[0]].points[selectedPoint[1]].select(false,false);
+				});
+
+				$("#pricevrating").on('click', function() {
+					//$('#moreinfo').css('visibility', 'hidden');
+					if ($("#mapChart").highcharts().options.chart.className == 'map') {
+						$(this).prop('value', "Show Malt Map");
+						$("#info").empty();
+						$("#ratinglimit > input, #upperrange, #lowerrange").prop("disabled", true);
+						priceChartInit();
+						if ($.fn.DataTable.isDataTable("#whiskyReviews")) {
+							$("#whiskyReviews").dataTable().fnClearTable();
+						}
+					} else {
+						$(this).prop('value', "Show Price vs Rating Chart");
+						$("#info").empty();
+						$("#ratinglimit > input, #upperrange, #lowerrange").prop("disabled", false);
+						mapChartInit();
+						if ($.fn.DataTable.isDataTable("#whiskyReviews")) {
+							$("#whiskyReviews").dataTable().fnClearTable();
+						}
+					}
+				});
+
+				$("#info").on('click', '.showOnMap', function(e) {
+					e.preventDefault();
+					var clicked = $(this).parent().find("h2").text();
+					if ($("#mapChart").highcharts().options.chart.className == 'map') {
+						$("#pricevrating").prop('value', "Show Malt Map");
+						$(".showOnMap").html("Show on Malt Map<br>");
+						$("#ratinglimit > input").prop("disabled", true);
+						priceChartInit(selectedPoint);
+					} else {
+						$("#pricevrating").prop('value', "Show Price vs Rating Chart");
+						$(".showOnMap").html("Show on Ratings vs Price Chart<br>");
+						$("#ratinglimit > input").prop("disabled", false);
+						mapChartInit(selectedPoint);
+					}
+				});
+
+				$(".regionToggle").change(function() {
+					updateChart($(this).val());
+				});
+
+				$(".regionToggle, #regionSelect .area").hover(function() {
+					if ($(this).is('input')) {
+						var value = $(this).val();
+					} else {
+						var value = $('input[id="' + $(this).attr('for') + '"]').val();
+					}
+					$("#vectorMap #" + value).css('fill', '#5cb85c');
+				}, function() {
+					$("#vectorMap path").css('fill', 'steelblue');
+				});
+
+				$('#vectorMap').on('click', 'path', function(){
+					updateChart($(this).attr('id'));
+				});
+
+				$("#vectorMap > path").mousemove(function(e) {
+					$(this).css('fill', '#5cb85c');
+					$("#regionMouseover").text($(this).attr('id'));
+					$("#regionMouseover").css({'top': e.pageY - 15, 'left':e.pageX + 10}).show();
+				}).mouseleave(function() {
+					$("#regionMouseover").hide();
+					$("#vectorMap path").css('fill', 'steelblue');
+				})
+
+				$("#info").on('click', '.getReviews', function() {
+					var clicked = $(this).parent().parent().find("h4").text();
+					Papa.parse(scotchDB, {
+						download: true,
+						worker: true,
+						header: true,
+						complete: function(results) {
+							var regex = new RegExp(clicked, "i");
+							var tempVar = results.data.map(function(i) {
+								if (i["Whisky Name"].match(regex)) {
+									return i;
+								}
+							});
+							tempVar = $.grep(tempVar, function(n){return(n)});
+							makeTable(tempVar);
+						}
+					});
+				});
+
+				$("#backgroundFade").on('click', function() {
+					$(this).hide();
+					$("#reviewList").hide();
+					$("#whiskyReviews").dataTable().fnDestroy();
+				});
+
+				$(document).keyup(function(e) {
+					if (e.keyCode == 27) {
+						if ($("#backgroundFade").is(":visible")){
+							$("#backgroundFade, #reviewList").hide();
+							$("#whiskyReviews").dataTable().fnDestroy();
+						}
+					}
+				})
+			});
